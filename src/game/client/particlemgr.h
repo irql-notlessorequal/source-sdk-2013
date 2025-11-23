@@ -764,7 +764,7 @@ private:
 
 	int m_nToolParticleEffectId;
 
-	IThreadPool *m_pThreadPool[2];
+	IThreadPool *m_pThreadPool;
 };
 
 inline int CParticleMgr::AllocateToolParticleEffectId()
