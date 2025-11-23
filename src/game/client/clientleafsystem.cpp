@@ -38,6 +38,26 @@ static ConVar cl_threaded_client_leaf_system("cl_threaded_client_leaf_system", "
 DEFINE_FIXEDSIZE_ALLOCATOR( CClientRenderablesList, 1, CUtlMemoryPool::GROW_SLOW );
 
 //-----------------------------------------------------------------------------
+// All the information associated with a particular handle
+//-----------------------------------------------------------------------------
+struct RenderableInfo_t
+{
+	IClientRenderable*	m_pRenderable;
+	int					m_RenderFrame;	// which frame did I render it in?
+	int					m_RenderFrame2;
+	int					m_EnumCount;	// Have I been added to a particular shadow yet?
+	int					m_TranslucencyCalculated;
+	unsigned int		m_LeafList;		// What leafs is it in?
+	unsigned int		m_RenderLeaf;	// What leaf do I render in?
+	unsigned char		m_Flags;		// rendering flags
+	unsigned char		m_RenderGroup;	// RenderGroup_t type
+	unsigned short		m_FirstShadow;	// The first shadow caster that cast on it
+	short m_Area;	// -1 if the renderable spans multiple areas.
+	signed char			m_TranslucencyCalculatedView;
+	int                 m_RequiresComputeFXBlendUpdate; // Used by client leaf system
+};
+
+//-----------------------------------------------------------------------------
 // Threading helpers
 //-----------------------------------------------------------------------------
 
@@ -238,23 +258,6 @@ private:
 		RENDER_FLAGS_STUDIO_MODEL	= 0x08,
 		RENDER_FLAGS_HASCHANGED		= 0x10,
 		RENDER_FLAGS_ALTERNATE_SORTING = 0x20,
-	};
-
-	// All the information associated with a particular handle
-	struct RenderableInfo_t
-	{
-		IClientRenderable*	m_pRenderable;
-		int					m_RenderFrame;	// which frame did I render it in?
-		int					m_RenderFrame2;
-		int					m_EnumCount;	// Have I been added to a particular shadow yet?
-		int					m_TranslucencyCalculated;
-		unsigned int		m_LeafList;		// What leafs is it in?
-		unsigned int		m_RenderLeaf;	// What leaf do I render in?
-		unsigned char		m_Flags;		// rendering flags
-		unsigned char		m_RenderGroup;	// RenderGroup_t type
-		unsigned short		m_FirstShadow;	// The first shadow caster that cast on it
-		short m_Area;	// -1 if the renderable spans multiple areas.
-		signed char			m_TranslucencyCalculatedView;
 	};
 
 	// The leaf contains an index into a list of renderables
