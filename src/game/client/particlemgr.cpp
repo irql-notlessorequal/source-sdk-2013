@@ -1045,8 +1045,7 @@ CParticleMgr::CParticleMgr()
 	m_bUpdatingEffects = false;
 	m_bRenderParticleEffects = true;
 	m_pMaterialSystem = NULL;
-	m_pThreadPool[0] = 0;
-	m_pThreadPool[1] = 0;
+	m_pThreadPool = NULL;
 	memset( &m_DirectionalLight, 0, sizeof( m_DirectionalLight ) );
 
 	m_FrameCode = 1;
@@ -1091,7 +1090,7 @@ bool CParticleMgr::Init(unsigned long count, IMaterialSystem *pMaterials)
 #ifdef TF_CLIENT_DLL
 	if ( r_threaded_particles.GetBool() )
 	{
-		m_pThreadPool[1] = CreateThreadPool();
+		m_pThreadPool = CreateThreadPool();
 
 		ThreadPoolStartParams_t startParams;
 		startParams.nStackSize = 128*1024;
@@ -1106,7 +1105,7 @@ bool CParticleMgr::Init(unsigned long count, IMaterialSystem *pMaterials)
 			startParams.iAffinityTable[2] = XBOX_PROCESSOR_5;
 		}
 
-		m_pThreadPool[1]->Start( startParams, "ParticleMgr" );
+		m_pThreadPool->Start( startParams, "ParticleMgr" );
 	}
 #endif
 
@@ -1148,17 +1147,11 @@ void CParticleMgr::Term()
 	}
 	m_pMaterialSystem = NULL;
 	
-	if ( m_pThreadPool[0] )
+	if ( m_pThreadPool )
 	{
-		m_pThreadPool[0]->Stop();
-		DestroyThreadPool( m_pThreadPool[0] );
-		m_pThreadPool[0] = NULL;
-	}
-	if ( m_pThreadPool[1] )
-	{
-		m_pThreadPool[1]->Stop();
-		DestroyThreadPool( m_pThreadPool[1] );
-		m_pThreadPool[1] = NULL;
+		m_pThreadPool->Stop();
+		DestroyThreadPool( m_pThreadPool );
+		m_pThreadPool = NULL;
 	}
 
 	Assert( m_nCurrentParticlesAllocated == 0 );
@@ -1876,7 +1869,7 @@ void CParticleMgr::UpdateNewEffects( float flTimeDelta )
 		{
 			CParallelProcessor<ParticleSimListEntry_t, CFuncJobItemProcessor<ParticleSimListEntry_t> > processor( "CParticleMgr::UpdateNewEffects" );
 			processor.m_ItemProcessor.Init( ProcessPSystem, NULL, NULL );
-			processor.Run( particlesToSimulate.Base(), nCount, INT_MAX, m_pThreadPool[1] );
+			processor.Run( particlesToSimulate.Base(), nCount, INT_MAX, m_pThreadPool );
 		}
 	}
 
