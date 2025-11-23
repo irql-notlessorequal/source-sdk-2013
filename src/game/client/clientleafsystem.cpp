@@ -569,9 +569,7 @@ void CClientLeafSystem::PreRender()
 			RemoveFromTree( handle );
 		}
 
-		bool bThreaded = false;//( nDirty > 5 && cl_threaded_client_leaf_system.GetBool() && g_pThreadPool->NumThreads() );
-
-		if ( !bThreaded )
+		if ( !cl_threaded_client_leaf_system.GetBool() )
 		{
 			for ( i = nDirty; --i >= 0; )
 			{
@@ -1419,12 +1417,11 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 
 	// For better sorting, we're gonna choose the leaf that is closest to the camera.
 	// The leaf list passed in here is sorted front to back
-	bool bThreaded = false;//( cl_threaded_client_leaf_system.GetBool() && g_pThreadPool->NumThreads() );
+	bool bThreaded = ( cl_threaded_client_leaf_system.GetBool() && g_pThreadPool->NumThreads() );
 	int globalFrameCount = gpGlobals->framecount;
 	int i;
 
-	static CUtlVector<RenderableInfo_t *> orderedList; // @MULTICORE (toml 8/30/2006): will need to make non-static if thread this function
-	static CUtlVector<IClientRenderable *> renderablesToUpdate;
+	CUtlVector<RenderableInfo_t *> orderedList;
 	int leaf = 0;
 	for ( i = 0; i < count; ++i )
 	{
@@ -1438,15 +1435,16 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 			RenderableInfo_t& info = m_Renderables[m_RenderablesInLeaf.Element(idx)];
 			if ( info.m_TranslucencyCalculated != globalFrameCount || info.m_TranslucencyCalculatedView != viewID )
 			{ 
-				// Compute translucency
-				if ( bThreaded )
-				{
-					renderablesToUpdate.AddToTail( info.m_pRenderable );
-				}
-				else
+				// If we're not threaded then Compute translucency, otherwise flag it down to do so.
+				if ( !bThreaded )
 				{
 					info.m_pRenderable->ComputeFxBlend();
 				}
+				else
+				{
+					info.m_RequiresComputeFXBlendUpdate = true;
+				}
+
 				info.m_TranslucencyCalculated = globalFrameCount;
 				info.m_TranslucencyCalculatedView = viewID;
 			}
@@ -1457,7 +1455,7 @@ void CClientLeafSystem::ComputeTranslucentRenderLeaf( int count, const LeafIndex
 
 	if ( bThreaded )
 	{
-		ParallelProcess( "CClientLeafSystem::ComputeTranslucentRenderLeaf", renderablesToUpdate.Base(), renderablesToUpdate.Count(), &CallComputeFXBlend, &::FrameLock, &::FrameUnlock );
+		ParallelProcess( "CClientLeafSystem::ComputeTranslucentRenderLeaf", orderedList.Base(), orderedList.Count(), &CallComputeFXBlend, &::FrameLock, &::FrameUnlock );
 		renderablesToUpdate.RemoveAll();
 	}
 
