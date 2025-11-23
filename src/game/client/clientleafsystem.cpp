@@ -14,6 +14,7 @@
 #include "model_types.h"
 #include "ivrenderview.h"
 #include "tier0/vprof.h"
+#include "tier0/threadtools.h"
 #include "bsptreedata.h"
 #include "detailobjectsystem.h"
 #include "engine/IStaticPropMgr.h"
@@ -71,9 +72,24 @@ static void FrameUnlock()
 	mdlcache->EndLock();
 }
 
-static void CallComputeFXBlend( IClientRenderable *&pRenderable )
+//-----------------------------------------------------------------------------
+// Threaded offloading of ComputeTranslucentRenderLeaf()
+//-----------------------------------------------------------------------------
+static void CallComputeFXBlend( RenderableInfo_t *&pRenderable )
 {
-	pRenderable->ComputeFxBlend();
+	if (pRenderable)
+#define IsLeafMarker( p ) (bool)((reinterpret_cast<size_t>(p)) & 1)
+	if (IsLeafMarker(pRenderable))
+	{
+		pRenderable->ComputeFxBlend();
+		return;
+	}
+#undef  IsLeafMarker
+
+	if (ThreadInterlockedExchange(&pRenderable->m_RequiresComputeFXBlendUpdate, 0))
+	{
+		pRenderable->m_pRenderable->ComputeFxBlend();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -634,6 +650,7 @@ void CClientLeafSystem::NewRenderable( IClientRenderable* pRenderable, RenderGro
 	info.m_RenderGroup = (unsigned char)type;
 	info.m_EnumCount = 0;
 	info.m_RenderLeaf = m_RenderablesInLeaf.InvalidIndex();
+	info.m_RequiresComputeFXBlendUpdate = false;
 	if ( IsViewModelRenderGroup( (RenderGroup_t)info.m_RenderGroup ) )
 	{
 		AddToViewModelList( handle );
