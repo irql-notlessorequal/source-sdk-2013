@@ -1764,10 +1764,27 @@ void CGameMovement::AirMove( void )
 	smove = mv->m_flSideMove;
 	
 	// Zero out z components of movement vectors
-	forward[2] = 0;
-	right[2]   = 0;
-	VectorNormalize(forward);  // Normalize remainder of vectors
-	VectorNormalize(right);    // 
+	if ( g_bMovementOptimizations )
+	{
+		if ( forward[2] != 0 )
+		{
+			forward[2] = 0;
+			VectorNormalize( forward );
+		}
+
+		if ( right[2] != 0 )
+		{
+			right[2] = 0;
+			VectorNormalize( right );
+		}
+	}
+	else
+	{
+		forward[2] = 0;
+		right[2]   = 0;
+		VectorNormalize(forward);  // Normalize remainder of vectors
+		VectorNormalize(right);    // 
+	}
 
 	for (i=0 ; i<2 ; i++)       // Determine x and y parts of velocity
 		wishvel[i] = forward[i]*fmove + right[i]*smove;
