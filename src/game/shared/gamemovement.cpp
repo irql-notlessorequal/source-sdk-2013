@@ -2585,7 +2585,7 @@ int CGameMovement::TryPlayerMove( Vector *pFirstDest, trace_t *pFirstTrace, floa
 
 	for (bumpcount=0 ; bumpcount < numbumps; bumpcount++)
 	{
-		if ( mv->m_vecVelocity.Length() == 0.0 )
+		if ( mv->m_vecVelocity.LengthSqr() == 0.0f )
 			break;
 
 		// Assume we can move all the way from the current origin to the
