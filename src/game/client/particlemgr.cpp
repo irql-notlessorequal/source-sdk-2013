@@ -1858,19 +1858,11 @@ void CParticleMgr::UpdateNewEffects( float flTimeDelta )
 	if ( nCount )
 	{
 		UpdateDirtySpatialPartitionEntities();
-		if ( !r_threaded_particles.GetBool() )
-		{
-			for( int i=0; i<nCount; i++)
-			{
-				ProcessPSystem( particlesToSimulate[i] );
-			}
-		}
-		else
-		{
-			CParallelProcessor<ParticleSimListEntry_t, CFuncJobItemProcessor<ParticleSimListEntry_t> > processor( "CParticleMgr::UpdateNewEffects" );
-			processor.m_ItemProcessor.Init( ProcessPSystem, NULL, NULL );
-			processor.Run( particlesToSimulate.Base(), nCount, INT_MAX, m_pThreadPool );
-		}
+
+		CParallelProcessor<ParticleSimListEntry_t, CFuncJobItemProcessor<ParticleSimListEntry_t> > processor( "CParticleMgr::UpdateNewEffects" );
+		processor.m_ItemProcessor.Init( ProcessPSystem, NULL, NULL );
+		processor.Run( particlesToSimulate.Base(), nCount, INT_MAX,
+			r_threaded_particles.GetBool() ? (IThreadPool*)m_pThreadPool : NULL );
 	}
 
 	// now, run non-reentrant part for updating changes
