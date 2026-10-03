@@ -964,12 +964,12 @@ float CGameMovement::ComputeConstraintSpeedFactor( void )
 
 	Vector vecDelta;
 	VectorSubtract( mv->GetAbsOrigin(), mv->m_vecConstraintCenter, vecDelta );
-	VectorNormalize( vecDelta );
-	VectorNormalize( vecDesired );
+	// Sign of the dot product is unchanged by normalization, so skip both normalizes.
 	if (DotProduct( vecDelta, vecDesired ) < 0.0f)
 		return 1.0f;
 
-	float flFrac = (sqrt(flDistSq) - (mv->m_flConstraintRadius - mv->m_flConstraintWidth)) / mv->m_flConstraintWidth;
+	float flInvWidth = 1.0f / mv->m_flConstraintWidth;
+	float flFrac = (sqrt(flDistSq) - (mv->m_flConstraintRadius - mv->m_flConstraintWidth)) * flInvWidth;
 
 	float flSpeedFactor = Lerp( flFrac, 1.0f, mv->m_flConstraintSpeedFactor ); 
 	return flSpeedFactor;
