@@ -553,10 +553,10 @@ public:
 		VPROF( "CSoundEmitterSystem::EmitSound (calls engine)" );
 
 
-		if ( ep.m_pSoundName && 
-			( Q_stristr( ep.m_pSoundName, ".wav" ) || 
-			  Q_stristr( ep.m_pSoundName, ".mp3" ) || 
-			  ep.m_pSoundName[0] == '!' ) )
+		const char *pExt = ep.m_pSoundName ? V_strrchr( ep.m_pSoundName, '.' ) : NULL;
+		bool bIsRawSound = ep.m_pSoundName && ( ep.m_pSoundName[0] == '!' ||
+			( pExt && ( Q_stricmp( pExt, ".wav" ) == 0 || Q_stricmp( pExt, ".mp3" ) == 0 ) ) );
+		if ( bIsRawSound )
 		{
 #if !defined( CLIENT_DLL )
 			bool bSwallowed = CEnvMicrophone::OnSoundPlayed( 
@@ -573,8 +573,8 @@ public:
 				return;
 #endif
 
-			if ( ep.m_bWarnOnDirectWaveReference && 
-				Q_stristr( ep.m_pSoundName, ".wav" ) )
+			if ( ep.m_bWarnOnDirectWaveReference &&
+				pExt && Q_stricmp( pExt, ".wav" ) == 0 )
 			{
 				WaveTrace( ep.m_pSoundName, "Emitsound" );
 			}
