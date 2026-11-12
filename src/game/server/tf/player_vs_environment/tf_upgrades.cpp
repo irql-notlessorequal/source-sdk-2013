@@ -771,7 +771,10 @@ void CUpgrades::ReportUpgrade( CTFPlayer *pTFPlayer, int nItemDef, int nAttribut
 		return;
 	}
 
-	pTFPlayer->EmitSound( "MVM.PlayerUpgraded" );
+	if ( bIsFresh )
+	{
+		pTFPlayer->EmitSound( "MVM.PlayerUpgraded" );
+	}
 
 	IGameEvent *event = gameeventmanager->CreateEvent( "player_upgraded" );
 	if ( event )
